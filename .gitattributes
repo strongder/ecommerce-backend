@@ -1,0 +1,14 @@
+* text=auto
+
+# Đảm bảo các tệp script sử dụng LF thay vì CRLF
+*.sh text eol=lf
+
+# Đảm bảo các tệp batch của Windows sử dụng CRLF
+*.cmd text eol=crlf
+
+# Các tệp khác vẫn giữ nguyên
+*.properties text eol=lf
+*.xml text eol=lf
+*.java text eol=lf
+*.yml text eol=lf
+
