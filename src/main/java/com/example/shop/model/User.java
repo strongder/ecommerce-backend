@@ -1,6 +1,7 @@
 package com.example.shop.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,14 +18,13 @@ public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-
 	@Column(name = "username", unique = true, nullable = false)
 	private String username;
 
-	private String avatar;
-
 	@Column(name = "full_name")
 	private String fullName;
+
+	private String avatar;
 
 	@Column(name = "email")
 	private String email;
@@ -49,6 +49,7 @@ public class User {
 	@OneToMany(mappedBy = "user")
 	@EqualsAndHashCode.Exclude
 	@ToString.Exclude
+	@JsonIgnore
 	private Set<Address> addresses;
 
 	@EqualsAndHashCode.Exclude

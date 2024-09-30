@@ -6,7 +6,13 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
@@ -14,58 +20,103 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class JwtUtils {
-    public static final String SECRET = "4D6251655468576D5A7134743777217A25432A46294A404E635266556A586E32";
 
+    @NonFinal
+    @Value("${jwt.secret}")
+    private String SECRET;
 
-    public static String extractUsername(String token) {
+    @NonFinal
+    @Value("${jwt.refresh-secret}")
+    private String REFRESH_SECRET;
+
+    @NonFinal
+    @Value("${jwt.expiration}")
+    private int EXPIRATION;
+
+    @NonFinal
+    @Value("${jwt.refresh-expiration}")
+    private int REFRESH_EXPIRATION;
+
+    public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public static Date extractExpiration(String token) {
+    public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public static Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
-
-    public static String generateToken(String userName){
-        Map<String,Object> claims=new HashMap<>();
-        return createToken(claims,userName);
+    public String generateToken(String userName) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, userName, SECRET, EXPIRATION);
     }
 
-    private static String createToken(Map<String, Object> claims, String userName) {
+
+    private String createToken(Map<String, Object> claims, String userName, String secret, int expiration) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userName)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis()+1000*60*60))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
-     }
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignKey(secret), SignatureAlgorithm.HS256).compact();
+    }
 
-    private static Key getSignKey() {
-        byte[] keyBytes= Decoders.BASE64.decode(SECRET);
+
+    private Key getSignKey(String key) {
+        byte[] keyBytes = Decoders.BASE64.decode(key);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private static  <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    private static Claims extractAllClaims(String token) {
+    private Claims extractAllClaims(String token) {
         return Jwts
                 .parserBuilder()
-                .setSigningKey(getSignKey())
+                .setSigningKey(getSignKey(SECRET))
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
-    private static Boolean isTokenExpired(String token) {
+    private Boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
+    }
+    public String generateRefreshToken(String userName) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, userName, REFRESH_SECRET, REFRESH_EXPIRATION);
+    }
+
+
+
+    public Claims extractAllClaimsRefresh(String token) {
+        return Jwts
+                .parserBuilder()
+                .setSigningKey(getSignKey(REFRESH_SECRET))
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+    public boolean isValidRefreshToken(String token) {
+        try {
+            Claims claims = extractAllClaimsRefresh(token);
+            if (claims.getExpiration().after(new Date()) && claims.getSubject() != null) {
+                return true;
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

@@ -6,15 +6,18 @@ import com.example.shop.exception.AppException;
 import com.example.shop.exception.ErrorResponse;
 import com.example.shop.model.Category;
 import com.example.shop.repository.CategoryRepository;
+import com.example.shop.utils.PaginationSortingUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -27,9 +30,10 @@ public class CategoryService{
 	private ModelMapper modelMapper;
 
 	@Transactional(readOnly = true)
-	public List<CategoryResponse> getAll() {
-		List<Category> categories = categoryRepository.findAll();
-		return categories.stream().map(category -> modelMapper.map(category, CategoryResponse.class)).toList();
+	public Page<CategoryResponse> getAll(int pageNum, int pageSize, String sortDir, String sortBy) {
+        Pageable pageable = PaginationSortingUtils.getPageable(pageNum, pageSize, sortDir, sortBy);
+        Page<Category> categories = categoryRepository.findAll(pageable);
+		return categories.map(category -> modelMapper.map(category, CategoryResponse.class));
 
 	}
 	@Transactional(readOnly = true)
@@ -48,9 +52,32 @@ public class CategoryService{
             throw new AppException(ErrorResponse.CATEGORY_EXISTED);
         }
             Category category = modelMapper.map(request, Category.class);
+            category.setCreateAt(LocalDateTime.now());
             categoryRepository.save(category);
             return modelMapper.map(category, CategoryResponse.class);
 	}
+    public CategoryResponse update(Long id, CategoryRequest request) {
+        Optional<Category> category = categoryRepository.findById(id);
+        if (category.isPresent()) {
+            Category categoryUpdate = category.get();
+            categoryUpdate.setName(request.getName());
+            categoryUpdate.setImage(request.getImage());
+            categoryRepository.save(categoryUpdate);
+            return modelMapper.map(categoryUpdate, CategoryResponse.class);
+        } else {
+            throw new AppException(ErrorResponse.CATEGORY_NOT_EXISTED);
+        }
+    }
+    public void delete(Long id) {
+        Optional<Category> category = categoryRepository.findById(id);
+        if (category.isPresent()) {
+            categoryRepository.deleteById(id);
+        } else {
+            throw new AppException(ErrorResponse.CATEGORY_NOT_EXISTED);
+        }
+    }
+
+
 
 
 }

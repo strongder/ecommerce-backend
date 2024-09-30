@@ -2,12 +2,11 @@ package com.example.shop.model;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Min;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.List;
 
 @Entity
 @Table(name = "product")
@@ -15,36 +14,48 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Product {
-	
-	@Id 
-	@GeneratedValue( strategy = GenerationType.IDENTITY)
-	private Long id;
 
-	@Column (name = "code", unique = true)
-	private String code;
-	
-	@Column (name = "created_at")
-	private LocalDateTime createdAt;
-	
-	@Column (name = "name")
-	private String name ;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	private String image;
-	private int amount;
-	@Column (name = "description")
-	private String description;
-	
-	@Column (name = "price")
-	private Double price;
-	
-	@Column( columnDefinition = "boolean default false")
-	private boolean isDelete;
-	
-	@ManyToOne
-	@JoinColumn(name = "category_id")
-	private Category category;
-	
-	@OneToMany(mappedBy = "product")
-	private Set<VariantProduct> variantProducts;
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "price")
+    private Double price;
+
+    @Column(name = "rating")
+    private float rating;
+
+    @Column(name = "stock")
+    @Min(value = 0, message = "Stock must be greater than or equal to 0")
+    private Integer stock;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isDelete;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "category")
+    private Category category;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<VarProduct> varProducts;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<ImageProduct> imageUrls;
+
 
 }

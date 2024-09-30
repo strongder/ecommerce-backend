@@ -1,7 +1,9 @@
 package com.example.shop.config;
 
+import com.example.shop.model.Category;
 import com.example.shop.model.Role;
 import com.example.shop.model.User;
+import com.example.shop.repository.CategoryRepository;
 import com.example.shop.repository.RoleRepository;
 import com.example.shop.repository.UserRepository;
 import lombok.AccessLevel;
@@ -23,9 +25,10 @@ public class AppInitConfig {
 
 
     PasswordEncoder passwordEncoder;
+    CategoryRepository categoryRepository;
 
     @NonFinal
-    private String ADMIN_USER_NAME = "admin";
+    private String ADMIN_USER_NAME = "admin@gmail.com";
 
     @NonFinal
     private String ADMIN_USER_PASS = "admin";
@@ -35,7 +38,7 @@ public class AppInitConfig {
     public ApplicationRunner applicationRunner (UserRepository userRepository, RoleRepository roleRepository)
     {
         return args -> {
-            if(userRepository.findByUsername(ADMIN_USER_NAME).isEmpty()) {
+            if(userRepository.findByEmail(ADMIN_USER_NAME).isEmpty()) {
                 Role adminRole = roleRepository.save(
                         Role.builder()
                                 .name("ADMIN")
@@ -52,11 +55,18 @@ public class AppInitConfig {
                                 .email(ADMIN_USER_NAME)
                                 .username("admin")
                                 .password(passwordEncoder.encode(ADMIN_USER_PASS))
-                                .avatar("https://th.bing.com/th/id/OIP.-HoDebcd1MseGnmiTJALDAHaEo?rs=1&pid=ImgDetMain")
+                              //  .avatar("https://th.bing.com/th/id/OIP.-HoDebcd1MseGnmiTJALDAHaEo?rs=1&pid=ImgDetMain")
                                 .roles(roles)
                                 .build()
                 );
             }
+            if(categoryRepository.findById(1L).isEmpty())
+            categoryRepository.save(
+                    Category.builder()
+                            .name("Áo")
+                            .build()
+            );
+
         };
     }
 }

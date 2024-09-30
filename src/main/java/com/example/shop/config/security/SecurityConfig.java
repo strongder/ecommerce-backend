@@ -22,6 +22,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    public static String[] PUBLIC_ENPOINT = {"/api/v1/auth/**", "/api/v1/public/**", "/ws/**"};
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -43,40 +46,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity,
                                                    UserDetailsService userDetailsService, JwtAuthFilter filter) throws Exception {
-//        return httpSecurity.csrf().disable()
-//                .authorizeHttpRequests()
-//                    .requestMatchers("/api/auth/**", "/users/register-user").permitAll()
-//                .and()
-//                .authorizeHttpRequests()
-//                    .requestMatchers("/products/**","/users/**", "/variant-products/**",
-//                    		"/carts/**","/addresses/**","/orders/**","/categories/**").hasAnyRole("ADMIN", "USER")
-//                .and()
-//                .authorizeHttpRequests()
-//                .anyRequest().authenticated()
-//                .and()
-//                .sessionManagement()
-//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//                .and()
-//                .authenticationProvider(authenticationProvider(userDetailsService))
-//                .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
-//                .build();
-
-//        httpSecurity.csrf(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(request ->{
-//                    request.requestMatchers("/api/auth/**").permitAll();
-//                })
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authenticationProvider(authenticationProvider(userDetailsService))
-//                .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
         httpSecurity.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(
-                request -> request.requestMatchers("/**","/api/auth/**").permitAll()
-                        // .requestMatchers("/").hasAuthority("ROLE_ADMIN")
+                request -> request.requestMatchers(PUBLIC_ENPOINT).permitAll()
+                         //.requestMatchers("/").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider(userDetailsService))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
-
 
         return httpSecurity.build();
     }

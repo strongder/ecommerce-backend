@@ -1,63 +1,94 @@
 package com.example.shop.controller;
 
+
 import com.example.shop.dtos.request.ProductRequest;
+import com.example.shop.dtos.response.ApiResponse;
 import com.example.shop.dtos.response.ProductResponse;
 import com.example.shop.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/v1/products")
 public class ProductController {
 
-	@Autowired
-	private ProductService productService;
+    @Autowired
+    private ProductService productService;
 
-	@GetMapping("/{id}")
-	public ResponseEntity<ProductResponse> getById(@PathVariable("id") Long id) {
-		ProductResponse result = productService.getById(id);
-		return new ResponseEntity<>(result, HttpStatus.OK);
-	}
-
-    @GetMapping("/search/{key}")
-    public ResponseEntity<List<ProductResponse>> getProductByKey(@PathVariable("key") String key) {
-       List<ProductResponse> result = productService.getProductByKey(key);
-        return new ResponseEntity<>(result, HttpStatus.OK);
+    @GetMapping("/{id}")
+    public ApiResponse<ProductResponse> getById(@PathVariable("id") Long id) {
+        ProductResponse product = productService.getById(id);
+        return  ApiResponse.<ProductResponse>builder()
+                .message("Get product by id success")
+                .result(product)
+                .build();
     }
 
-	@GetMapping()
-	// path: /products/{categoryId}?pageNum= &pageSize= $sortDir= &sortBy=
-	public ResponseEntity<List<ProductResponse>> getProductsByCategory(
-			@RequestParam("categoryId") Long categoryId,
-			@RequestParam("pageNum") int pageNum,
-			@RequestParam("pageSize") int pageSize,
-			@RequestParam("sortDir") String sortDir,
-			@RequestParam("sortBy") String sortBy) {
-		List<ProductResponse> productDTOS = productService.getProductsByCategory(categoryId, pageNum, pageSize, sortDir,
-				sortBy);
-		return new ResponseEntity<>(productDTOS, HttpStatus.OK);
+    @GetMapping("/search/{key}")
+    public ApiResponse<List<ProductResponse>> getProductByKey(@PathVariable("key") String key) {
+        List<ProductResponse> product = productService.getProductByKey(key);
+        return ApiResponse.<List<ProductResponse>>builder()
+                .message("Get product by key success")
+                .result(product)
+                .build();
+    }
 
-	}
-//	@PreAuthorize("hasRole('ADMIN')")
-	@PostMapping()
-	public ResponseEntity<ProductResponse> create(@RequestBody ProductRequest request)
-	{
-		ProductResponse result = productService.create(request);
-		return new ResponseEntity<>(result, HttpStatus.CREATED);
-	}
-//	@PreAuthorize("hasRole('ADMIN')")
-	@PutMapping("/{id}")
-	public ResponseEntity<ProductResponse> update(
-			@PathVariable("id") Long id,
-			@RequestBody ProductRequest request)
-	{
-        ProductResponse result = productService.update(id, request);
-		return new ResponseEntity<>(result, HttpStatus.OK);
-	}
+    @GetMapping()
+    public ApiResponse<Page<ProductResponse>> getAll(
+            @RequestParam(value = "pageNum", defaultValue = "0") int pageNum,
+            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
+            @RequestParam(value = "sortDir", defaultValue = "asc") String sortDir,
+            @RequestParam(value = "sortBy", defaultValue = "name") String sortBy) {
+        Page<ProductResponse> productPage = productService.getAll(pageNum, pageSize, sortDir, sortBy);
+            return ApiResponse.<Page<ProductResponse>>builder()
+                    .message("Get all product success")
+                    .result(productPage)
+                    .build();
+    }
+
+    @GetMapping("/category/{categoryId}")
+    public ApiResponse<Page<ProductResponse>> getProductsByCategory(
+            @PathVariable("categoryId") Long categoryId,
+            @RequestParam(value = "pageNum", defaultValue = "0") int pageNum,
+            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
+            @RequestParam(value = "sortDir", defaultValue = "asc") String sortDir,
+            @RequestParam(value = "sortBy", defaultValue = "name") String sortBy) {
+
+        Page<ProductResponse> result = productService.getProductsByCategory(categoryId, pageNum, pageSize, sortDir, sortBy);
+        return ApiResponse.<Page<ProductResponse>>builder()
+                .message("Get product by category success")
+                .result(result)
+                .build();
+    }
+
+
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping()
+    public ApiResponse<ProductResponse> create(@RequestBody ProductRequest request) {
+        ProductResponse result = productService.create(request);
+        return ApiResponse.<ProductResponse>builder()
+                .message("Create product success")
+                .result(result)
+                .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{productId}")
+    public ApiResponse<ProductResponse> update(
+            @PathVariable("productId") Long productId,
+            @RequestBody ProductRequest request) {
+        ProductResponse result = productService.update(productId, request);
+        return ApiResponse.<ProductResponse>builder()
+                .message("Update product success")
+                .result(result)
+                .build();
+    }
+
 
 }
