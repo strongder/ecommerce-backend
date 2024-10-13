@@ -28,11 +28,18 @@ public class Product {
     @Column(name = "rating")
     private float rating;
 
+    @Column(name = "discount", columnDefinition = "int default 0")
+    private int discount;
+
     @Column(name = "stock")
     @Min(value = 0, message = "Stock must be greater than or equal to 0")
     private Integer stock;
 
-    @Column(name = "description")
+    @Column(name = "quantity_sold")
+    @Min(value = 0, message = "Stock must be greater than or equal to 0")
+    private Integer quantitySold;
+
+    @Column(name = "description", columnDefinition = "LONGTEXT")
     private String description;
 
     @Column(columnDefinition = "boolean default false")
@@ -52,7 +59,7 @@ public class Product {
     @EqualsAndHashCode.Exclude
     private List<VarProduct> varProducts;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<ImageProduct> imageUrls;

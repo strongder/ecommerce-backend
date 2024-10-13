@@ -14,16 +14,17 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 public class ProductResponse {
-
     private Long id;
     private String name ;
-    private String stock;
+    private Integer stock;
+    private Integer quantitySold;
     private Float rating;
     private List<ImageProductResponse> imageUrls;
     private String description;
+    private int discount;
     private Double price;
     private List<VarProductResponse> varProducts;
-    private CategoryResponse category;
+    private Long categoryId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean isDelete;

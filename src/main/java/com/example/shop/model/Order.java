@@ -1,6 +1,7 @@
 package com.example.shop.model;
 
 
+import com.example.shop.dtos.OrderStatusType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,7 +26,8 @@ public class Order {
     private Double total;
 
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private OrderStatusType status;
 
     @Column(name = "order_code")
     private String orderCode;
@@ -45,7 +47,7 @@ public class Order {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<OrderItem> orderItems;
 
 

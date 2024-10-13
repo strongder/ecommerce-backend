@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/categories")
 @CrossOrigin(origins = "http://localhost:3000")
@@ -17,14 +19,14 @@ public class CategoryController {
 	private CategoryService categoryService;
 
 	@GetMapping
-	public ApiResponse<Page<CategoryResponse>> getAll(
+	public ApiResponse<Page<CategoryResponse>> getAllPaing(
             @RequestParam(value = "pageNum", defaultValue = "0") int pageNum,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
             @RequestParam(value = "sortDir", defaultValue = "asc") String sortDir,
             @RequestParam(value = "sortBy", defaultValue = "createAt") String sortBy
     )
 	{
-		Page<CategoryResponse> result = categoryService.getAll(pageNum, pageSize, sortDir, sortBy);
+		Page<CategoryResponse> result = categoryService.getAllPaging(pageNum, pageSize, sortDir, sortBy);
 		return ApiResponse.<Page<CategoryResponse>>builder()
                 .message("Get all categories success")
                 .result(result)
@@ -52,6 +54,23 @@ public class CategoryController {
         CategoryResponse result = categoryService.update(categoryId,request);
         return ApiResponse.<CategoryResponse>builder()
                 .message("Update category success")
+                .result(result)
+                .build();
+    }
+    @GetMapping("/parent")
+    public ApiResponse<List<CategoryResponse>> fetchParentCategories() {
+        List<CategoryResponse> result = categoryService.fetchParentCategory();
+        return ApiResponse.<List<CategoryResponse>>builder()
+                .message("Fetch parent categories success")
+                .result(result)
+                .build();
+    }
+
+    @DeleteMapping("/{categoryId}")
+    public ApiResponse<CategoryResponse> delete(@PathVariable Long categoryId) {
+        CategoryResponse result =  categoryService.delete(categoryId);
+        return ApiResponse.<CategoryResponse>builder()
+                .message("Delete category success")
                 .result(result)
                 .build();
     }

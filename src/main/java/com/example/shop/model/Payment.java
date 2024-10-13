@@ -1,5 +1,6 @@
 package com.example.shop.model;
 
+import com.example.shop.dtos.PaymentStatusType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +31,8 @@ public class Payment {
     private String paymentMethod; // vnpay, paypal, ...
 
     @Column(name = "status")
-    private String status; // pending, success, failed
+    @Enumerated(EnumType.STRING)
+    private PaymentStatusType status; // pending, success, failed
 
     private LocalDateTime paymentTime;
 

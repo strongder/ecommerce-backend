@@ -3,6 +3,7 @@ package com.example.shop.controller;
 import com.example.shop.dtos.request.AddressRequest;
 import com.example.shop.dtos.response.AddressResponse;
 import com.example.shop.dtos.response.ApiResponse;
+import com.example.shop.model.Address;
 import com.example.shop.service.AddressService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -61,6 +62,24 @@ public class AddressController {
         AddressResponse addressDTO = addressService.delete(id);
         return ApiResponse.<AddressResponse>builder()
                 .message("Delete address success")
+                .result(addressDTO)
+                .build();
+    }
+
+    @PutMapping("/set-default/{id}")
+    public ApiResponse<AddressResponse> setDefaultAddress(@PathVariable Long id) {
+        AddressResponse addressDTO = addressService.setDefaultAddress(id);
+        return ApiResponse.<AddressResponse>builder()
+                .message("Set default address success")
+                .result(addressDTO)
+                .build();
+    }
+
+    @GetMapping("/default")
+    public ApiResponse<AddressResponse> getDefaultAddress() {
+        AddressResponse addressDTO = addressService.getDefaultAddress();
+        return ApiResponse.<AddressResponse>builder()
+                .message("Get default address success")
                 .result(addressDTO)
                 .build();
     }

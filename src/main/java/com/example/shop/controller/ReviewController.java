@@ -32,7 +32,7 @@ public class ReviewController {
     @GetMapping("/product/{productId}")
     public ApiResponse<Page<ReviewResponse>> getReviewByProductId(@PathVariable  Long productId
             , @RequestParam(value = "pageNum", defaultValue = "0") int pageNum
-            , @RequestParam(value = "pageSize", defaultValue = "10") int pageSize
+            , @RequestParam(value = "pageSize", defaultValue = "5") int pageSize
             , @RequestParam(value = "sortDir", defaultValue = "asc") String sortDir
             , @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy){
 
@@ -40,6 +40,14 @@ public class ReviewController {
         return ApiResponse.<Page<ReviewResponse>>builder()
                 .message("Get review by product id success")
                 .result(reviewService.getReviewByProductId(productId, pageNum, pageSize, sortDir, sortBy))
+                .build();
+    }
+
+    @GetMapping("/user/{userId}/product/{productId}")
+    public ApiResponse<ReviewResponse> getReviewByUserIdAndProductId(@PathVariable Long userId, @PathVariable Long productId){
+        return ApiResponse.<ReviewResponse>builder()
+                .message("Get review by user id and product id success")
+                .result(reviewService.getReviewByUserAndProduct(userId, productId))
                 .build();
     }
 }

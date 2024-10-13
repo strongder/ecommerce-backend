@@ -19,9 +19,11 @@ public enum ErrorResponse {
     CART_NOT_EXISTED(1013,"cart not exist"),
     CART_EMPTY(1014,"cart empty"),
     ORDER_NOT_EXISTED(1015,"order not exist"),
-    ORDER_PAID(1016,"order paid"),
+    ORDER_CANCEL(1016,"order cancel"),
+    ORDER_SHIPED(1019, "order has been shiped"),
     PAYMENT_NOT_EXISTED(10167,"payment not exist"),
     INVALID_REQUEST_PARAMETERS(1018, "Invalid request parameters"),
+    NOTIFICATION_NOT_EXISTED(1020, "notification not exist"),
 
 
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error"),

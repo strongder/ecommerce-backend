@@ -17,6 +17,7 @@ public class ProductRequest {
     private String name ;
     private List<String> imageUrls;
     private String category;
+    private int discount;
     private String description;
     private List<VarProductRequest> varProducts;
     private Double price;

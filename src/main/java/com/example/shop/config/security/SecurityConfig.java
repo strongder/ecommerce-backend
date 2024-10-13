@@ -23,7 +23,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    public static String[] PUBLIC_ENPOINT = {"/api/v1/auth/**", "/api/v1/public/**", "/ws/**"};
+    public static String[] PUBLIC_ENPOINT = {"/api/v1/auth/login", "/api/v1/auth/**", "/api/v1/public/**", "/ws/**"
+            , "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**","/api/v1/payment/vnpay-callback"};
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -48,9 +49,8 @@ public class SecurityConfig {
                                                    UserDetailsService userDetailsService, JwtAuthFilter filter) throws Exception {
 
         httpSecurity.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(
-                request -> request.requestMatchers(PUBLIC_ENPOINT).permitAll()
-                         //.requestMatchers("/").hasAuthority("ROLE_ADMIN")
-                        .anyRequest().authenticated())
+                        request -> request.requestMatchers(PUBLIC_ENPOINT).permitAll()
+                                .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider(userDetailsService))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);

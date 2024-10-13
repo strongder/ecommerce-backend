@@ -26,6 +26,9 @@ public class VarProduct {
     @Column(name = "stock")
     private int stock;
 
+    @Column(name = "quantity_sold")
+    private int quantitySold;
+
     @Column(name = "is_delete", columnDefinition = "boolean default false")
     private boolean isDelete;
 

@@ -2,6 +2,8 @@ package com.example.shop.service;
 
 
 import com.example.shop.config.payment.VnpayConfig;
+import com.example.shop.dtos.OrderStatusType;
+import com.example.shop.dtos.PaymentStatusType;
 import com.example.shop.dtos.request.PaymentRequest;
 import com.example.shop.dtos.response.PaymentResponse;
 import com.example.shop.dtos.response.VnpayResponse;
@@ -20,6 +22,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -33,12 +36,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @EnableScheduling
+@RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class PaymentService {
 
+    @Autowired
     VnpayConfig vnpayConfig;
+
     OrderRepository orderRepository;
     PaymentRepository paymentRepository;
     UserRepository userRepository;
@@ -51,15 +56,13 @@ public class PaymentService {
         Order order = orderRepository.findById(paymentRequest.getOrderId())
                 .orElseThrow(() -> new AppException(ErrorResponse.ORDER_NOT_EXISTED));
 
-
-
         long amount = (long) (order.getTotal() * 100); // Chuyển đổi từ Đơn vị tiền tệ
         String bankCode = request.getParameter("bankCode");
         // Tạo và lưu giao dịch Payment vào CSDL
         Payment payment = new Payment();
         payment.setAmount((double) amount / 100);
         payment.setPaymentMethod(order.getPaymentMethod());
-        payment.setStatus("PENDING");
+        payment.setStatus(PaymentStatusType.PENDING);
         payment.setPaymentTime(LocalDateTime.now());
 
         payment = paymentRepository.save(payment);
@@ -122,8 +125,8 @@ public class PaymentService {
         String title = null;
         String message = null;
         if (status.equals("00")) {
-            payment.setStatus("SUCCESS");
-            payment.getOrder().setStatus("PAID");
+            payment.setStatus(PaymentStatusType.PAID);
+            payment.getOrder().setStatus(OrderStatusType.PROCESSING);
             title = "Payment Success";
             message = "Your payment for order with order code: " + payment.getOrder().getOrderCode() + " has been successfully";
             vnpayResponse = VnpayResponse.builder()
@@ -132,7 +135,7 @@ public class PaymentService {
                     .paymentUrl("") // Chưa cần sử dụng trường này trong callback
                     .build();
         } else {
-            payment.setStatus("failed");
+            payment.setStatus(PaymentStatusType.FAILED);
             vnpayResponse = null;
         }
         paymentRepository.save(payment);
@@ -149,16 +152,15 @@ public class PaymentService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expirationTime = payment.getPaymentTime().plusMinutes(15); // Ví dụ: 15 phút
 
-        if (now.isAfter(expirationTime) && payment.getStatus().equals("PENDING")) {
-            payment.setStatus("PAID"); // Cập nhật trạng thái thành "Paid"
+        if (now.isAfter(expirationTime) && payment.getStatus()== PaymentStatusType.PENDING) {
+            payment.setStatus(PaymentStatusType.EXPIRED); // Cập nhật trạng thái thành "Paid"
             paymentRepository.save(payment);
         }
     }
 
     @Scheduled(fixedRate = 180000)
     public void checkPendingPayments() {
-
-        List<Payment> pendingPayments = paymentRepository.findByStatus("PENDING");
+        List<Payment> pendingPayments = paymentRepository.findByStatus(PaymentStatusType.PENDING);
         for (Payment payment : pendingPayments) {
             updatePaymentStatusIfExpired(payment.getId());
         }

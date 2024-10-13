@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -46,6 +47,7 @@ public class ReviewService {
         Review review = modelMapper.map(request, Review.class);
         review.setUser(user);
         review.setProduct(product);
+        review.setCreatedAt(LocalDateTime.now());
         reviewRepository.save(review);
         product.setRating(getRatingByProductId(product.getId()));
         productRepository.save(product);
@@ -58,6 +60,10 @@ public class ReviewService {
         Page<Review> reviews = reviewRepository.findByProductId(productId, pageable).orElseThrow(
                 () -> new AppException(ErrorResponse.PRODUCT_NOT_EXISTED));
         return reviews.map(review -> modelMapper.map(review, ReviewResponse.class));
+    }
+    public ReviewResponse getReviewByUserAndProduct(Long userId, Long productId) {
+        Review review = reviewRepository.findByUserIdAndProductId(userId, productId).orElseThrow(null);
+        return modelMapper.map(review, ReviewResponse.class);
     }
 
     public Float getRatingByProductId(Long productId) {

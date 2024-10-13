@@ -1,6 +1,7 @@
 package com.example.shop.model;
 
 
+import com.example.shop.dtos.NotificationType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,9 +29,11 @@ public class Notification {
 
     private String message;
 
-    private String data;
+    @Column(name = "is_read", columnDefinition = "boolean default false")
+    private boolean isRead;
 
-    private boolean isDelivered;
+    @Column (name = "data", columnDefinition = "TEXT")
+    private String data;
 
     private LocalDateTime createdAt;
 

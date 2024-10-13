@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +45,7 @@ public class AddressService {
     public List<AddressResponse> getAddressByUser(Long userId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
-            Set<Address> addresses = addressRepository.findByUser(user.get());
+            Set<Address> addresses = addressRepository.findByUserAndIsDeleteFalse(user.get());
             return addresses.stream().map(address -> addressConvert.convertToDTO(address)).collect(Collectors.toList());
         } else {
             throw new AppException( ErrorResponse.USER_NOT_EXISTED);
@@ -74,7 +75,34 @@ public class AddressService {
     @Transactional
 	public AddressResponse create(AddressRequest request) {
 		Address address = addressConvert.convertToEntity(request);
+		address.setDefaultAddress(false);
 		addressRepository.save(address);
 		return addressConvert.convertToDTO(address);
 	}
+
+
+	public AddressResponse setDefaultAddress(Long id) {
+		var email = SecurityContextHolder.getContext().getAuthentication().getName();
+		Optional<User> user = userRepository.findByEmail(email);
+		Set<Address> addresses = addressRepository.findByUserAndIsDeleteFalse(user.get());
+		addresses.forEach(address -> {
+			if (address.getId().equals(id)) {
+				address.setDefaultAddress(true);
+			} else {
+				address.setDefaultAddress(false);
+			}
+		});
+		addressRepository.saveAll(addresses);
+		return addressConvert.convertToDTO(addressRepository.findById(id).get());
+	}
+
+    public AddressResponse getDefaultAddress() {
+		var email = SecurityContextHolder.getContext().getAuthentication().getName();
+		Optional<User> user = userRepository.findByEmail(email);
+		Optional<Address> address = addressRepository.findByUserAndDefaultAddressTrueAndIsDeleteFalse(user.get());
+		if (address.isPresent()) {
+			return addressConvert.convertToDTO(address.get());
+		}
+		throw new AppException(ErrorResponse.ADDRESS_NOT_EXISTED);
+    }
 }

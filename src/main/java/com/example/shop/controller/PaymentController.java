@@ -32,7 +32,7 @@ public class PaymentController {
                 .build();
     }
 
-    @GetMapping("/vn-pay-callback")
+    @GetMapping("/vnpay-callback")
     public ApiResponse<VnpayResponse> payCallbackHandler(HttpServletRequest request) {
         // Lấy tham số từ yêu cầu
         String status = request.getParameter("vnp_ResponseCode");

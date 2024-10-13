@@ -13,4 +13,6 @@ public class VarProductResponse {
     private Long id;
     private Map<String, Object> attribute;
     private int stock;
+    private Long productId;
+    private int quantitySold;
 }

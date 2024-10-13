@@ -15,6 +15,5 @@ public class OrderRequest {
 	private Long userId;
 	private Long addressId;
 	private String paymentMethod;
-//	private Set<OrderItemRequest> orderItems;
 	private String status;
 }

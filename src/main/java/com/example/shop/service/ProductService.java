@@ -21,15 +21,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -75,7 +78,6 @@ public class ProductService {
         if (category.isPresent()) {
             Pageable pageable = PaginationSortingUtils.getPageable(pageNum, pageSize, sortDir, sortBy);
             Page<Product> productPage = productRepository.findByCategoryId(categoryId, pageable);
-            // Chuyển đổi các đối tượng Product thành ProductResponse
             return productPage.map(product -> productConvert.convertToDTO(product));
         }
         throw new AppException(ErrorResponse.CATEGORY_NOT_EXISTED);
@@ -89,13 +91,47 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponse> getProductByKey(String key) {
+    public Page<ProductResponse> getProductByKey(String key, int pageNum, int pageSize, String sortDir, String sortBy, int rating, double price, boolean discount) {
 
-        List<Product> products = productRepository.findAll().stream().filter(
-                product -> product.getName().contains(key)).collect(Collectors.toList());
-        return products.stream().
-                map(product -> productConvert.convertToDTO(product))
+        // Chia khóa thành các từ khóa
+        String[] keyArray = key.split(" ");
+        StringBuilder formatKey = new StringBuilder();
+
+        // Ghi lại các từ khóa vào biến formatKey
+        Arrays.stream(keyArray).forEach(subKey -> {
+            formatKey.append("+").append(subKey);
+        });
+
+        // Logging từ khóa đã định dạng
+        log.warn("Formatted search key: {}", formatKey.toString());
+
+        // Lấy danh sách sản phẩm từ cơ sở dữ liệu
+        Pageable pageable = PaginationSortingUtils.getPageable(pageNum, pageSize, sortDir, sortBy);
+        Page<Product> products = productRepository.searchByKeyword(formatKey.toString(), pageable);
+
+        // Khởi tạo stream từ danh sách sản phẩm
+        Stream<Product> productStream = products.stream();
+
+        // Lọc theo điều kiện price
+        if (price > 0) {
+            productStream = productStream.filter(product -> product.getPrice() <= price);
+        }
+        // Lọc theo điều kiện rating
+        if (rating > 0) {
+            productStream = productStream.filter(product -> product.getRating() == rating);
+        }
+        // Lọc theo điều kiện discount
+        if (discount) {
+            productStream = productStream.filter(product -> product.getDiscount() > 0);
+        }
+
+        // Chuyển đổi các sản phẩm đã lọc thành ProductResponse và thu thập chúng vào danh sách
+        List<ProductResponse> filteredProducts = productStream
+                .map(product -> productConvert.convertToDTO(product))
                 .collect(Collectors.toList());
+
+        // Trả về danh sách sản phẩm đã lọc trong một Page
+        return new PageImpl<>(filteredProducts, pageable, products.getTotalElements());
     }
 
     @Transactional
@@ -113,6 +149,7 @@ public class ProductService {
         product.setImageUrls(images);
         AtomicInteger stock = new AtomicInteger();
         product.setRating(0.0f);
+        product.setQuantitySold(0);
         product.getVarProducts().stream().map(
                 varProduct -> {
                     stock.addAndGet(varProduct.getStock());
@@ -148,7 +185,7 @@ public class ProductService {
                     })
                     .collect(Collectors.toList());
             existedProduct.getImageUrls().addAll(images);
-             //Cập nhật varProducts
+            //Cập nhật varProducts
             existedProduct.getVarProducts().clear();
             AtomicInteger stock = new AtomicInteger();
             List<VarProduct> varProducts = request.getVarProducts().stream()
@@ -180,8 +217,15 @@ public class ProductService {
             throw new AppException(ErrorResponse.PRODUCT_NOT_EXISTED);
         }
     }
-//    public Page<ProductResponse> searchProduct (String query)
 
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> getProductDiscount(int pageNum, int pageSize, String sortDir, String sortBy) {
+
+        Pageable pageable = PaginationSortingUtils.getPageable(pageNum, pageSize, sortDir, sortBy);
+        Page<Product> productPage = productRepository.findByDiscount(pageable);
+        return productPage.map(product -> productConvert.convertToDTO(product));
+
+    }
 
 
     public boolean isProductInStock(Long varProductId, int quantity) {
@@ -192,6 +236,7 @@ public class ProductService {
         return false;
     }
 
+    @Transactional(readOnly = true)
     public List<VarProduct> getActiveVarProducts(Long productId) {
         List<VarProduct> varProducts = varProductRepository.findByProductId(productId);
         return varProducts.stream().filter(varProduct -> !varProduct.isDelete()).collect(Collectors.toList());

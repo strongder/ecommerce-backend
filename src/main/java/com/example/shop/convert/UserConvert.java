@@ -40,6 +40,12 @@ public class UserConvert {
     public UserResponse convertToDTO(User user)
     {
         UserResponse userResponse = modelMapper.map(user, UserResponse.class);
+        String username = user.getUsername();
+        if (username.contains("#")) {
+            userResponse.setUsername(username.substring(0, username.indexOf("#")));
+        } else {
+            userResponse.setUsername(username);
+        }
         return  userResponse;
     }
 

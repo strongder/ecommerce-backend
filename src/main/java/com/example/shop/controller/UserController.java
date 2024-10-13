@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @CrossOrigin(origins = "http://localhost:3000")
@@ -51,7 +53,7 @@ public class UserController {
 				.result(result)
 				.build();
 	}
-	@PutMapping("/{userId}")
+	@PutMapping("/update/{userId}")
 	public ApiResponse<UserResponse> update(@PathVariable("userId") Long userId, @RequestBody UserRequest request)
 	{
 		UserResponse result= userService.update(userId,request);
@@ -69,6 +71,19 @@ public class UserController {
 				.message("Create user success")
 				.result(result)
 				.build();
+	}
+
+	@PutMapping("/{userId}/update-avatar")
+	public ApiResponse<String> updateAvatar(
+			@PathVariable("userId") Long userId,
+			@RequestBody Map<String, String> avatar) {
+
+			String updatedAvatar = userService.updateAvatar(avatar, userId);
+			return ApiResponse.<String>builder()
+					.message("Update avatar success")
+					.result(updatedAvatar)
+					.build();
+
 	}
 
 }

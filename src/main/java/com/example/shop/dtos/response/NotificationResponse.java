@@ -1,6 +1,6 @@
 package com.example.shop.dtos.response;
 
-import com.example.shop.model.NotificationType;
+import com.example.shop.dtos.NotificationType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,6 +17,6 @@ public class NotificationResponse {
     private NotificationType type;
     private String data;
     private String title;
-    private String isDelivered ;
+    private boolean isRead ;
     private LocalDateTime createdAt;
 }

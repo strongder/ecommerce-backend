@@ -18,9 +18,10 @@ public class OrderController {
 
     @PostMapping("")
     public ApiResponse<OrderResponse> placeOrder(
-            @RequestBody OrderRequest orderRequest
+            @RequestBody OrderRequest orderRequest,
+            @RequestParam("total") Double total
     ) {
-        OrderResponse result = orderService.placeOrder(orderRequest);
+        OrderResponse result = orderService.placeOrder(orderRequest, total);
 
         return ApiResponse.<OrderResponse>builder()
                 .message("Place order success")
@@ -58,7 +59,7 @@ public class OrderController {
     public ApiResponse<Page<OrderResponse>> getOrderByUser(
             @PathVariable("userId") Long userId,
             @RequestParam(value = "pageNum", defaultValue = "0") int pageNum,
-            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
+            @RequestParam(value = "pageSize", defaultValue = "40") int pageSize,
             @RequestParam(value = "sortDir", defaultValue = "asc") String sortDir,
             @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy
     ) {
@@ -108,6 +109,18 @@ public class OrderController {
         OrderResponse result = orderService.acceptOrder(id);
         return ApiResponse.<OrderResponse>builder()
                 .message("Accept order success")
+                .result(result)
+                .build();
+    }
+
+    @PutMapping("/update-payment-method")
+    public ApiResponse<OrderResponse> updatePaymentMethod(
+            @RequestParam Long orderId,
+            @RequestParam String paymentMethod
+    ){
+        var result = orderService.updatePaymentMethod(orderId, paymentMethod);
+        return ApiResponse.<OrderResponse>builder()
+                .message("update order success")
                 .result(result)
                 .build();
     }

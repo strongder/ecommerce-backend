@@ -43,7 +43,7 @@ public class OrderConvert {
     {
         OrderResponse orderResponse = modelMapper.map(order, OrderResponse.class);
         orderResponse.setPaymentMethod(order.getPaymentMethod());
-        orderResponse.setStatus(order.getStatus());
+        orderResponse.setStatus(order.getStatus()+"");
         orderResponse.setTotal(order.getTotal());
         orderResponse.getOrderItems().forEach(
                 orderItem -> {

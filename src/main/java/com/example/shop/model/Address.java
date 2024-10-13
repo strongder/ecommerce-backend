@@ -39,6 +39,8 @@ public class Address {
 
 	@Column( columnDefinition = "boolean default false")
 	private boolean isDelete;
+
+	private boolean defaultAddress;
 	
 	@ManyToOne
 	@JoinColumn(name = "user_id")

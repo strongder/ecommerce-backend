@@ -10,8 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/v1/products")
@@ -29,14 +27,6 @@ public class ProductController {
                 .build();
     }
 
-    @GetMapping("/search/{key}")
-    public ApiResponse<List<ProductResponse>> getProductByKey(@PathVariable("key") String key) {
-        List<ProductResponse> product = productService.getProductByKey(key);
-        return ApiResponse.<List<ProductResponse>>builder()
-                .message("Get product by key success")
-                .result(product)
-                .build();
-    }
 
     @GetMapping()
     public ApiResponse<Page<ProductResponse>> getAll(

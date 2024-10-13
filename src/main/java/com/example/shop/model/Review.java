@@ -25,8 +25,8 @@ public class Review {
         @Column(name = "rating")
         private int rating;
 
-        @Column(name = "create_at")
-        private LocalDateTime createAt;
+        @Column(name = "created_at")
+        private LocalDateTime createdAt;
 
         @ManyToOne
         private User user;
