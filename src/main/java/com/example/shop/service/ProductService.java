@@ -3,6 +3,7 @@ package com.example.shop.service;
 import com.example.shop.convert.ProductConvert;
 import com.example.shop.dtos.request.ProductRequest;
 import com.example.shop.dtos.response.ProductResponse;
+import com.example.shop.dtos.response.ProductSaleDTO;
 import com.example.shop.exception.AppException;
 import com.example.shop.exception.ErrorResponse;
 import com.example.shop.model.Category;
@@ -16,17 +17,22 @@ import com.example.shop.repository.VarProductRepository;
 import com.example.shop.utils.PaginationSortingUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.Tuple;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -217,6 +223,71 @@ public class ProductService {
             throw new AppException(ErrorResponse.PRODUCT_NOT_EXISTED);
         }
     }
+
+
+    public List<ProductSaleDTO> getTopSellingProductsByCategoryAndDate(Long categoryId, String startDate, String endDate, int limit) {
+
+        if(startDate == null && endDate == null)
+        {
+            startDate = "1970-01-01";
+            endDate = String.valueOf(LocalDate.now().plusDays(1));
+        }
+        LocalDate startDateFormatted = LocalDate.parse(startDate);
+        LocalDate endDateFormatted = LocalDate.parse(endDate);
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Tuple> productTuple = productRepository.findTopSellingProductsByCategoryAndDate(
+                categoryId, startDateFormatted, endDateFormatted, pageable);
+        List<ProductSaleDTO> products = new ArrayList<>();
+        productTuple.forEach(tuple -> {
+            ProductSaleDTO product = new ProductSaleDTO();
+            product.setName(tuple.get("productName", String.class));
+
+            // Lấy totalSold và chuyển đổi từ BigDecimal sang Integer
+            BigDecimal totalSoldBD = tuple.get("totalSold", BigDecimal.class);
+            product.setQuantitySold(totalSoldBD != null ? totalSoldBD.intValue() : 0); // Tránh NullPointerException
+            product.setImage(tuple.get("productImage", String.class));
+            // Lấy totalRevenue và chuyển đổi từ BigDecimal sang Double
+            Double totalRevenueBD = tuple.get("totalRevenue", Double.class);
+            product.setTotalSales(totalRevenueBD); // Tránh NullPointerException
+
+            products.add(product);
+        });
+
+        return products;
+    }
+
+    public List<ProductSaleDTO> getProductStatistics(String startDate, String endDate, int pageNum) {
+
+        if(startDate == null && endDate == null)
+        {
+            startDate = "1970-01-01";
+            endDate = String.valueOf(LocalDate.now().plusDays(1));
+        }
+        LocalDate startDateFormatted = LocalDate.parse(startDate);
+        LocalDate endDateFormatted = LocalDate.parse(endDate);
+
+        Pageable pageable = PageRequest.of(pageNum, 5);
+        List<Tuple> productTuple = productRepository.productStatistics(
+                startDateFormatted, endDateFormatted, pageable);
+        List<ProductSaleDTO> products = new ArrayList<>();
+        productTuple.forEach(tuple -> {
+            ProductSaleDTO product = new ProductSaleDTO();
+            product.setName(tuple.get("productName", String.class));
+
+            // Lấy totalSold và chuyển đổi từ BigDecimal sang Integer
+            BigDecimal totalSoldBD = tuple.get("totalSold", BigDecimal.class);
+            product.setQuantitySold(totalSoldBD != null ? totalSoldBD.intValue() : 0); // Tránh NullPointerException
+
+            // Lấy totalRevenue và chuyển đổi từ BigDecimal sang Double
+            Double totalRevenueBD = tuple.get("totalRevenue", Double.class);
+            product.setTotalSales(totalRevenueBD);
+
+            products.add(product);
+        });
+
+        return products;
+    }
+
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> getProductDiscount(int pageNum, int pageSize, String sortDir, String sortBy) {

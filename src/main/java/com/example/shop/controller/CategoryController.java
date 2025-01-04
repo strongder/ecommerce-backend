@@ -3,6 +3,7 @@ package com.example.shop.controller;
 import com.example.shop.dtos.request.CategoryRequest;
 import com.example.shop.dtos.response.ApiResponse;
 import com.example.shop.dtos.response.CategoryResponse;
+import com.example.shop.repository.CategoryRepository;
 import com.example.shop.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,8 +18,9 @@ public class CategoryController {
 
 	@Autowired
 	private CategoryService categoryService;
+    private CategoryRepository categoryRepository;
 
-	@GetMapping
+    @GetMapping
 	public ApiResponse<Page<CategoryResponse>> getAllPaing(
             @RequestParam(value = "pageNum", defaultValue = "0") int pageNum,
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
@@ -60,6 +62,15 @@ public class CategoryController {
     @GetMapping("/parent")
     public ApiResponse<List<CategoryResponse>> fetchParentCategories() {
         List<CategoryResponse> result = categoryService.fetchParentCategory();
+        return ApiResponse.<List<CategoryResponse>>builder()
+                .message("Fetch parent categories success")
+                .result(result)
+                .build();
+    }
+
+    @GetMapping("/subCategory")
+    public ApiResponse<List<CategoryResponse>> fetchSubCategories() {
+        List<CategoryResponse> result = categoryService.findBySubCategories();
         return ApiResponse.<List<CategoryResponse>>builder()
                 .message("Fetch parent categories success")
                 .result(result)

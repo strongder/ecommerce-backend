@@ -56,14 +56,14 @@ public class NotificationService {
     }
 
     @Transactional
-    public void sendPaymentNotification(Long paymentId, String title, String message) {
+    public void sendPaymentNotification(Order order, Long paymentId, String title, String message) {
         String destination = "/topic/admin/notification";
         List<User> users = userRepository.findByRoleName("ADMIN");
         for (User user : users) {
             Notification notification = new Notification();
             notification.setUser(user);
             notification.setType(NotificationType.PAYMENT);
-            notification.setData(String.valueOf(paymentId));
+            notification.setData(String.valueOf(order.getId()));
             notification.setTitle(title);
             notification.setMessage(message);
             notification.setCreatedAt(LocalDateTime.now());

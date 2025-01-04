@@ -39,7 +39,8 @@ import java.util.stream.Collectors;
 @EnableScheduling
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-public class PaymentService {
+public class
+PaymentService {
 
     @Autowired
     VnpayConfig vnpayConfig;
@@ -132,14 +133,13 @@ public class PaymentService {
             vnpayResponse = VnpayResponse.builder()
                     .code("00")
                     .message("Payment successfully")
-                    .paymentUrl("") // Chưa cần sử dụng trường này trong callback
                     .build();
         } else {
             payment.setStatus(PaymentStatusType.FAILED);
             vnpayResponse = null;
         }
         paymentRepository.save(payment);
-        notificationService.sendPaymentNotification(payment.getId(), title, message);
+        notificationService.sendPaymentNotification(payment.getOrder(),payment.getId(), title, message);
         return vnpayResponse;
     }
 
@@ -152,7 +152,7 @@ public class PaymentService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expirationTime = payment.getPaymentTime().plusMinutes(15); // Ví dụ: 15 phút
 
-        if (now.isAfter(expirationTime) && payment.getStatus()== PaymentStatusType.PENDING) {
+        if (now.isAfter(expirationTime) && payment.getStatus() == PaymentStatusType.PENDING) {
             payment.setStatus(PaymentStatusType.EXPIRED); // Cập nhật trạng thái thành "Paid"
             paymentRepository.save(payment);
         }

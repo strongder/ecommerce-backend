@@ -3,15 +3,13 @@ package com.example.shop.service;
 
 import com.example.shop.convert.OrderConvert;
 import com.example.shop.dtos.OrderStatusType;
+import com.example.shop.dtos.PaymentStatusType;
 import com.example.shop.dtos.request.OrderRequest;
 import com.example.shop.dtos.response.OrderResponse;
 import com.example.shop.exception.AppException;
 import com.example.shop.exception.ErrorResponse;
 import com.example.shop.model.*;
-import com.example.shop.repository.OrderRepository;
-import com.example.shop.repository.ProductRepository;
-import com.example.shop.repository.UserRepository;
-import com.example.shop.repository.VarProductRepository;
+import com.example.shop.repository.*;
 import com.example.shop.utils.PaginationSortingUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -25,13 +23,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -49,6 +45,7 @@ public class OrderService {
     CartService cartService;
     NotificationService notificationService;
     private final ProductRepository productRepository;
+    private final PaymentRepository paymentRepository;
 
 
     @Transactional
@@ -63,39 +60,24 @@ public class OrderService {
         if (order.getPaymentMethod().equals("COD")) {
             order.setStatus(OrderStatusType.PENDING);
             orderRepository.save(order);
-            String title = "Đơn hàng mới";
-            String message = "Bạn có đơn hàng mới: " + order.getOrderCode() + "vui lòng kiểm tra đơn hàng!";
-            notificationService.sendOrderNotification(order, title, message);
+
         } else if (order.getPaymentMethod().equals("VNPAY")) {
             order.setStatus(OrderStatusType.PENDING_PAYMENT);
             orderRepository.save(order);
             String title = "Hoàn tất thanh toán";
             String message = "Bạn có đơn hàng trị giá: " + formatPrice(order.getTotal()) + " vui lòng thanh toán trước:"
-                    + formatTime(LocalDateTime.now().plusHours(24)) + "để hoàn tất đơn hàng. Vui lòng bỏ qua tin nhắn này nếu bạn đã thanh toán.";
+                    + formatTime(LocalDateTime.now().plusHours(24)) + " để hoàn tất đơn hàng. Vui lòng bỏ qua tin nhắn này nếu bạn đã thanh toán.";
             notificationService.sendNotificationToUser(order, title, message);
         }
+        String title = "Đơn hàng mới";
+        String message = "Bạn có đơn hàng mới: " + order.getOrderCode() + " vui lòng kiểm tra đơn hàng!";
+        notificationService.sendOrderNotification(order, title, message);
         cartService.clearCart(order.getUser().getCart().getId());
 
         OrderResponse orderResponse = orderConvert.orderConvertToDTO(order);
         return orderResponse;
     }
 
-
-    @Scheduled(fixedRate = 3600000) // Kiểm tra mỗi giờ (3600000 milliseconds = 1 giờ)
-    public void checkPendingOrders() {
-        Date now = new Date();
-        List<Order> pendingOrders = orderRepository.findByStatus(OrderStatusType.PENDING_PAYMENT);
-
-        for (Order order : pendingOrders) {
-            long diffInMillies = Math.abs(now.getTime() - order.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
-            long diffInHours = TimeUnit.HOURS.convert(diffInMillies, TimeUnit.MILLISECONDS);
-
-            if (diffInHours >= 24) { // Giả sử đơn hàng hết hạn sau 24 giờ
-                cancelOrder(order.getId());
-                orderRepository.save(order);
-            }
-        }
-    }
 
     @Transactional(readOnly = true)
     public Page<OrderResponse> getAllOrders(
@@ -121,7 +103,7 @@ public class OrderService {
         order.setStatus(OrderStatusType.PROCESSING);
         orderRepository.save(order);
         String title = "Xử lý đơn hàng";
-        String message = "Đơn hàng" + order.getOrderCode() + "đã được xử lý";
+        String message = "Đơn hàng" + order.getOrderCode() + " đã được xử lý";
         notificationService.sendNotificationToUser(order, title, message);
         OrderResponse response = orderConvert.orderConvertToDTO(order);
         return response;
@@ -150,8 +132,8 @@ public class OrderService {
             throw new AppException(ErrorResponse.ORDER_CANCEL);
         order.setStatus(OrderStatusType.COMPLETED);
         orderRepository.save(order);
-        String title = "Hoàn thành đơn hang";
-        String message = "Đơn hàng: " + order.getOrderCode() + "đã hoàn thành vui lòng đánh giá sản phẩm.";
+        String title = "Hoàn thành đơn hàng";
+        String message = "Đơn hàng: " + order.getOrderCode() + " đã hoàn thành vui lòng đánh giá sản phẩm.";
         notificationService.sendNotificationToUser(order, title, message);
         return orderConvert.orderConvertToDTO(order);
     }
@@ -168,8 +150,8 @@ public class OrderService {
                         varProduct.setStock(varProduct.getStock() + orderItem.getQuantity());
                         varProduct.setQuantitySold(varProduct.getQuantitySold() - orderItem.getQuantity());
                         Product product = productRepository.findByVarProductsId(varProduct.getId());
-                        product.setStock(product.getStock()+orderItem.getQuantity());
-                        product.setQuantitySold(product.getQuantitySold()-orderItem.getQuantity());
+                        product.setStock(product.getStock() + orderItem.getQuantity());
+                        product.setQuantitySold(product.getQuantitySold() - orderItem.getQuantity());
                         varProductRepository.save(varProduct);
                     }
             );
@@ -177,8 +159,7 @@ public class OrderService {
             String message = "Đơn hàng: " + order.getOrderCode() + " đã bị hủy";
             notificationService.sendOrderNotification(order, title, message);
             return orderConvert.orderConvertToDTO(order);
-        }
-        else
+        } else
             throw new AppException(ErrorResponse.ORDER_SHIPED);
     }
 
@@ -191,10 +172,29 @@ public class OrderService {
         return orders.map(order -> orderConvert.orderConvertToDTO(order));
     }
 
-    public OrderResponse updatePaymentMethod(Long orderId, String paymentMethod)
-    {
+    @Transactional
+    @Scheduled(fixedRate = 86400000) // Kiểm tra mỗi giờ (3600000 milliseconds = 1 giờ)
+    public void checkPendingOrders() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Order> pendingOrders = orderRepository.findByStatus(OrderStatusType.PENDING_PAYMENT);
+        log.info("Checking pending orders: {}", pendingOrders.size());
+        List<Payment> payments = paymentRepository.findByOrderIn(pendingOrders);
+        payments.forEach(
+                payment ->
+                {
+                    log.info("Checking payment: {}", payment.getId());
+                    if (payment.getStatus() == PaymentStatusType.PENDING && Duration.between(payment.getPaymentTime(), now).toHours() >= 24) {
+                        payment.setStatus(PaymentStatusType.EXPIRED);
+                        paymentRepository.save(payment);
+                        cancelOrder(payment.getOrder().getId());
+                    }
+                }
+        );
+    }
+
+    public OrderResponse updatePaymentMethod(Long orderId, String paymentMethod) {
         Order order = orderRepository.findById(orderId).orElseThrow(
-                ()-> new AppException(ErrorResponse.ORDER_NOT_EXISTED)
+                () -> new AppException(ErrorResponse.ORDER_NOT_EXISTED)
         );
         order.setPaymentMethod(paymentMethod.toUpperCase());
         orderRepository.save(order);
@@ -216,11 +216,13 @@ public class OrderService {
 
         return orderCode.toString();
     }
-    public static String formatPrice (Double price) {
+
+    public static String formatPrice(Double price) {
         DecimalFormat decimalFormat = new DecimalFormat("#,###");
         return String.valueOf(decimalFormat.format(price));
 
     }
+
     public static String formatTime(LocalDateTime time) {
         DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
         return String.valueOf(time.format(dateTimeFormat));

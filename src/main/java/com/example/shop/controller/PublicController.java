@@ -4,6 +4,8 @@ package com.example.shop.controller;
 import com.example.shop.dtos.response.ApiResponse;
 import com.example.shop.dtos.response.CategoryResponse;
 import com.example.shop.dtos.response.ProductResponse;
+import com.example.shop.dtos.response.ProductSaleDTO;
+import com.example.shop.repository.CategoryRepository;
 import com.example.shop.service.CategoryService;
 import com.example.shop.service.ProductService;
 import lombok.AccessLevel;
@@ -23,6 +25,7 @@ public class PublicController {
 
     CategoryService categoryService;
     ProductService productService;
+    CategoryRepository categoryRepository;
 
     @GetMapping("/categories")
     public ApiResponse<List<CategoryResponse>> getAll() {
@@ -104,10 +107,9 @@ public class PublicController {
             @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
             @RequestParam(value = "sortDir", defaultValue = "asc") String sortDir,
             @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
-            @RequestParam(value = "rating",  defaultValue = "0") Integer rating,
-            @RequestParam(value = "price" , defaultValue = "0") Double price,
-            @RequestParam(value = "discount", defaultValue = "false") Boolean discount)
-    {
+            @RequestParam(value = "rating", defaultValue = "0") Integer rating,
+            @RequestParam(value = "price", defaultValue = "0") Double price,
+            @RequestParam(value = "discount", defaultValue = "false") Boolean discount) {
         Page<ProductResponse> result = productService.getProductByKey(query, pageNum, pageSize, sortDir, sortBy, rating, price, discount);
         return ApiResponse.<Page<ProductResponse>>builder()
                 .message("Search product success")
@@ -120,12 +122,33 @@ public class PublicController {
             @RequestParam(value = "pageNum", defaultValue = "0") int pageNum,
             @RequestParam(value = "pageSize", defaultValue = "20") int pageSize,
             @RequestParam(value = "sortDir", defaultValue = "asc") String sortDir,
-            @RequestParam(value = "sortBy", defaultValue = "name") String sortBy)
-    {
+            @RequestParam(value = "sortBy", defaultValue = "name") String sortBy) {
         Page<ProductResponse> result = productService.getProductDiscount(pageNum, pageSize, sortDir, sortBy);
         return ApiResponse.<Page<ProductResponse>>builder()
                 .message("Search product success")
                 .result(result)
                 .build();
     }
+
+    //    @GetMapping("/subCategory")
+//    public ApiResponse<List<Category>> fetchSubCategories() {
+//        List<Category> result = categoryRepository.findBySubCategories();
+//        return ApiResponse.<List<Category>>builder()
+//                .message("Fetch parent categories success")
+//                .result(result)
+//                .build();
+//    }
+    @GetMapping("/top-selling")
+    public ApiResponse<List<ProductSaleDTO>> getTopSellingProductsByCategoryAndDate(
+            @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "limit", defaultValue = "5") int limit) {
+        List<ProductSaleDTO> result = productService.getTopSellingProductsByCategoryAndDate(categoryId, startDate, endDate, limit);
+        return ApiResponse.<List<ProductSaleDTO>>builder()
+                .message("Get top selling products success")
+                .result(result)
+                .build();
+    }
+
 }

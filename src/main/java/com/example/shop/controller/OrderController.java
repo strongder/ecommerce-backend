@@ -63,7 +63,7 @@ public class OrderController {
             @RequestParam(value = "sortDir", defaultValue = "asc") String sortDir,
             @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy
     ) {
-        Page<OrderResponse> result = orderService.getAllOrders(pageNum, pageSize, sortDir, sortBy);
+        Page<OrderResponse> result = orderService.getOrdersByUser(userId, pageNum, pageSize, sortDir, sortBy);
         return ApiResponse.<Page<OrderResponse>>builder()
                 .message("Get all orders success")
                 .result(result)

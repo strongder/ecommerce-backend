@@ -92,6 +92,7 @@ public class JwtUtils {
     private Boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
+
     public String generateRefreshToken(String userName) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, userName, REFRESH_SECRET, REFRESH_EXPIRATION);

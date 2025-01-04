@@ -5,7 +5,6 @@ public enum OrderStatusType {
     PENDING_PAYMENT,
     PROCESSING,
     CANCELLED,
-    FAILED,
     SHIPED,
     COMPLETED
 }

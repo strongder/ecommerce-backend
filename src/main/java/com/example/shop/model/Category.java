@@ -42,5 +42,8 @@ public class Category {
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL)
     private Set<Category> subCategories;
 
-
+    public Category(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 }

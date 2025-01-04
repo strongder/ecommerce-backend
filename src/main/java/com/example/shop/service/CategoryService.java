@@ -114,6 +114,11 @@ public class CategoryService {
         List<Category> categories = categoryRepository.findByParentCategoryIsNullAndIsDeleteFalse();
         return categories.stream().map(category -> modelMapper.map(category, CategoryResponse.class)).toList();
     }
+    public List<CategoryResponse> findBySubCategories()
+    {
+        List<Category> categories = categoryRepository.findBySubCategories();
+        return categories.stream().map(category -> modelMapper.map(category, CategoryResponse.class)).toList();
+    }
 
 
 }

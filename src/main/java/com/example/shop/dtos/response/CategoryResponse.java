@@ -21,4 +21,9 @@ public class CategoryResponse {
     private LocalDateTime createAt;
     private Long parentId;
     private Set<CategoryResponse> subCategories;
+
+    public CategoryResponse(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 }

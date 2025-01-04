@@ -7,6 +7,7 @@ import com.example.shop.exception.AppException;
 import com.example.shop.exception.ErrorResponse;
 import com.example.shop.model.Cart;
 import com.example.shop.model.User;
+import com.example.shop.repository.ProductRepository;
 import com.example.shop.repository.UserRepository;
 import com.example.shop.utils.PaginationSortingUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +37,8 @@ public class UserService {
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
     UserConvert userConvert;
+    private final ProductService productService;
+    private final ProductRepository productRepository;
 
 
     @Transactional
@@ -45,6 +48,7 @@ public class UserService {
             throw new AppException(ErrorResponse.USER_EXISTED);
         } else {
             User user = userConvert.convertToEntity(request);
+            user.setUsername(user.getUsername() + generateSuffixUsername());
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             user.setAvatar("https://i.pinimg.com/736x/c6/e5/65/c6e56503cfdd87da299f72dc416023d4.jpg");
             Cart cart = new Cart();
@@ -132,6 +136,7 @@ public class UserService {
             return userConvert.convertToDTO(user);
         }
     }
+
 
     public String generateSuffixUsername() {
         String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
