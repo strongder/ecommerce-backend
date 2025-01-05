@@ -70,7 +70,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> signUp(@RequestBody UserRequest request) {
-        UserResponse result = userService.signUp(request);
+        UserResponse result = userService.signUp1(request);
         return new ResponseEntity<>(result, HttpStatus.CREATED);
     }
 

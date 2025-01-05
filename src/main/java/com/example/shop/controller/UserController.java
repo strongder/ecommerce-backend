@@ -56,7 +56,7 @@ public class UserController {
 	@PutMapping("/update/{userId}")
 	public ApiResponse<UserResponse> update(@PathVariable("userId") Long userId, @RequestBody UserRequest request)
 	{
-		UserResponse result= userService.update(userId,request);
+		UserResponse result= userService.update1(userId,request);
 		return  ApiResponse.<UserResponse>builder()
 				.message("Update user success")
 				.result(result)

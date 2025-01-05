@@ -2,8 +2,8 @@
   spring:
     datasource:
       url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/ecommerce
-      username: ${MYSQL_USER:root}
-      password: ${MYSQL_PASSWORD:1234567890}
+      username: ${MYSQL_USER:student}
+      password: ${MYSQL_PASSWORD:student}
 
     jpa:
       hibernate:
@@ -37,3 +37,5 @@
     expiration: 36000000
     refresh-secret: "d83sfdsdfsdfwrioewfjjjjewrw3246238948nfdsf889fsd89sdf"
     refresh-expiration: 86400000
+  base64:
+    key : "q2ert0yu3iopasdf5gvzjl"
