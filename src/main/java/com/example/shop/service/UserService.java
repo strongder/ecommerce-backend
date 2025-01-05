@@ -92,23 +92,20 @@ public class UserService {
     }
     @Transactional
     public UserResponse update1(Long userId, UserRequest request) {
-        Optional<User> existedUser = userRepository.findById(userId);
-        User userDecrypt = existedUser.get();
-        User decrypt = dencryptUser(userDecrypt);
-        if (existedUser.isPresent()) {
-            //User user = existedUser.get();
-            decrypt.setUsername(request.getUsername());
-            decrypt.setFullName(request.getFullName());
-            decrypt.setAvatar(request.getAvatar());
-            decrypt.setPhone(request.getPhone());
+        User existedUser = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
+        existedUser.setUsername(aesUtil.encrypt(request.getUsername()));
+        existedUser.setFullName(aesUtil.encrypt(request.getFullName()));
+        existedUser.setAvatar(aesUtil.encrypt(request.getAvatar()));
+        existedUser.setPhone(aesUtil.encrypt(request.getPhone())); ;
             if (request.getPassword() != null) {
-                decrypt.setPassword(passwordEncoder.encode(request.getPassword()));
+                existedUser.setPassword(passwordEncoder.encode(request.getPassword()));
             }
-            User encrypt = encryptUser(decrypt);
-            userRepository.save(encrypt);
-            return userConvert.convertToDTO(encrypt);
-        }
-        throw new AppException(ErrorResponse.USER_NOT_EXISTED);
+
+            userRepository.save(existedUser);
+            return userConvert.convertToDTO(dencryptUser(existedUser));
+
+
     }
 
     public String updateAvatar(Map<String, String> avatarObject, Long userId) {
@@ -136,6 +133,13 @@ public class UserService {
     ) {
         Pageable pageable = PaginationSortingUtils.getPageable(pageNum, pageSize, sortDir, sortBy);
         Page<User> users = userRepository.findAll(pageable);
+        return users.map(user -> userConvert.convertToDTO(user));
+    }
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAll1(int pageNum, int pageSize, String sortDir, String sortBy
+    ) {
+        Pageable pageable = PaginationSortingUtils.getPageable(pageNum, pageSize, sortDir, sortBy);
+        Page<User> users = userRepository.findByIdNot(1L,pageable);
         return users.map(user -> userConvert.convertToDTO(dencryptUser(user)));
     }
 
@@ -232,6 +236,7 @@ public class UserService {
 
     public User encryptUser(User user){
         User encrpyt = new User();
+        encrpyt.setId(user.getId());
         encrpyt.setUsername(aesUtil.encrypt(user.getUsername()));
         encrpyt.setFullName(aesUtil.encrypt(user.getFullName()));
         encrpyt.setEmail(aesUtil.encrypt(user.getEmail()));
@@ -244,18 +249,44 @@ public class UserService {
     }
 
     public User dencryptUser(User user){
+        User dencrpyt = new User();
+        dencrpyt.setId(user.getId());
+        dencrpyt.setUsername(aesUtil.decrypt(user.getUsername()));
+        dencrpyt.setFullName(aesUtil.decrypt(user.getFullName()));
+        dencrpyt.setEmail(aesUtil.decrypt(user.getEmail()));
+        dencrpyt.setAvatar(user.getAvatar() != null ? aesUtil.decrypt(user.getAvatar()) : null);
+        dencrpyt.setPhone(user.getPhone() != null ? aesUtil.decrypt(user.getPhone()) : null);
+        dencrpyt.setRoles(user.getRoles());
+        dencrpyt.setPassword(user.getPassword());
+
+        return dencrpyt;
+    }
+
+    public User encryptUpdateUser(User user){
         User encrpyt = new User();
-        encrpyt.setUsername(aesUtil.decrypt(user.getUsername()));
-        encrpyt.setFullName(aesUtil.decrypt(user.getFullName()));
-        encrpyt.setEmail(aesUtil.decrypt(user.getEmail()));
-        encrpyt.setAvatar(user.getAvatar() != null ? aesUtil.decrypt(user.getAvatar()) : null);
-        encrpyt.setPhone(user.getPhone() != null ? aesUtil.decrypt(user.getPhone()) : null);
-        encrpyt.setRoles(user.getRoles());
+        encrpyt.setUsername(aesUtil.encrypt(user.getUsername()));
+        encrpyt.setFullName(aesUtil.encrypt(user.getFullName()));
+        encrpyt.setEmail(aesUtil.encrypt(user.getEmail()));
+        encrpyt.setAvatar(user.getAvatar() != null ? aesUtil.encrypt(user.getAvatar()) : null);
+        encrpyt.setPhone(user.getPhone() != null ? aesUtil.encrypt(user.getPhone()) : null);
+       // encrpyt.setRoles(user.getRoles());
         encrpyt.setPassword(user.getPassword());
 
         return encrpyt;
     }
 
+    public User dencryptUpdateUser(User user){
+        User dencrpyt = new User();
+        dencrpyt.setId(user.getId());
+        dencrpyt.setUsername(aesUtil.decrypt(user.getUsername()));
+        dencrpyt.setFullName(aesUtil.decrypt(user.getFullName()));
+        dencrpyt.setEmail(aesUtil.decrypt(user.getEmail()));
+        dencrpyt.setAvatar(user.getAvatar() != null ? aesUtil.decrypt(user.getAvatar()) : null);
+        dencrpyt.setPhone(user.getPhone() != null ? aesUtil.decrypt(user.getPhone()) : null);
+       // dencrpyt.setRoles(user.getRoles());
+        dencrpyt.setPassword(user.getPassword());
 
+        return dencrpyt;
+    }
 
 }

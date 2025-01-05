@@ -38,7 +38,7 @@ public class UserController {
 			@RequestParam(value = "sortBy", defaultValue = "username") String sortBy
 	)
 	{
-		Page<UserResponse> result = userService.getAll(pageNum, pageSize, sortDir, sortBy);
+		Page<UserResponse> result = userService.getAll1(pageNum, pageSize, sortDir, sortBy);
 		return  ApiResponse.<Page<UserResponse>>builder()
 				.message("Get all users success")
 				.result(result)
