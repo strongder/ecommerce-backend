@@ -6,9 +6,12 @@ import com.example.shop.dtos.response.ApiResponse;
 import com.example.shop.dtos.response.AuthResponse;
 import com.example.shop.dtos.response.UserResponse;
 import com.example.shop.service.UserService;
+import com.example.shop.utils.AesUtil;
 import com.example.shop.utils.JwtUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,6 +40,17 @@ public class AuthController {
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    AesUtil aesUtil;
+
+    @Value("${base64.key}")
+    private String base64Key;
+
+
+    @PostConstruct
+    private void init() {
+        this.aesUtil = new AesUtil(base64Key);
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) {
@@ -56,11 +70,11 @@ public class AuthController {
     @PostMapping("/user/login")
     public ResponseEntity<AuthResponse> loginUser(@RequestBody AuthRequest authRequest) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
+                new UsernamePasswordAuthenticationToken(aesUtil.encrypt(authRequest.getEmail()), authRequest.getPassword())
         );
         if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_USER"))) {
-            String token = jwtUtils.generateToken(authRequest.getEmail());
-            String refreshToken = jwtUtils.generateRefreshToken(authRequest.getEmail());
+            String token = jwtUtils.generateToken(aesUtil.encrypt(authRequest.getEmail()));
+            String refreshToken = jwtUtils.generateRefreshToken(aesUtil.encrypt(authRequest.getEmail()));
             AuthResponse authResponse = new AuthResponse("Đăng nhập thành công", token, refreshToken);
             return new ResponseEntity<>(authResponse, HttpStatus.OK);
         }

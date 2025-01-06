@@ -97,7 +97,7 @@ public class AddressService {
 
 	public AddressResponse setDefaultAddress(Long id) {
 		var email = SecurityContextHolder.getContext().getAuthentication().getName();
-		Optional<User> user = Optional.ofNullable(userRepository.findByEmail(aesUtil.encrypt(email)).orElseThrow(() -> new AppException(ErrorResponse.USER_NOT_EXISTED)));
+		Optional<User> user = Optional.ofNullable(userRepository.findByEmail(email)).orElseThrow(() -> new AppException(ErrorResponse.USER_NOT_EXISTED));
 		Set<Address> addresses = addressRepository.findByUserAndIsDeleteFalse(user.get());
 		addresses.forEach(address -> {
 			if (address.getId().equals(id)) {
