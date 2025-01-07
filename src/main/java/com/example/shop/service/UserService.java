@@ -7,6 +7,7 @@ import com.example.shop.exception.AppException;
 import com.example.shop.exception.ErrorResponse;
 import com.example.shop.model.Cart;
 import com.example.shop.model.User;
+import com.example.shop.repository.CartRepository;
 import com.example.shop.repository.ProductRepository;
 import com.example.shop.repository.UserRepository;
 import com.example.shop.utils.AesUtil;
@@ -41,6 +42,7 @@ public class UserService {
     final UserRepository userRepository;
     final PasswordEncoder passwordEncoder;
     final UserConvert userConvert;
+    private final CartRepository cartRepository;
     AesUtil aesUtil;
     private final ProductService productService;
     private final ProductRepository productRepository;
@@ -90,6 +92,7 @@ public class UserService {
         }
         throw new AppException(ErrorResponse.USER_NOT_EXISTED);
     }
+
     @Transactional
     public UserResponse update1(Long userId, UserRequest request) {
         User existedUser = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
@@ -97,13 +100,14 @@ public class UserService {
         existedUser.setUsername(aesUtil.encrypt(request.getUsername()));
         existedUser.setFullName(aesUtil.encrypt(request.getFullName()));
         existedUser.setAvatar(aesUtil.encrypt(request.getAvatar()));
-        existedUser.setPhone(aesUtil.encrypt(request.getPhone())); ;
-            if (request.getPassword() != null) {
-                existedUser.setPassword(passwordEncoder.encode(request.getPassword()));
-            }
+        existedUser.setPhone(aesUtil.encrypt(request.getPhone()));
+        ;
+        if (request.getPassword() != null) {
+            existedUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
-            userRepository.save(existedUser);
-            return userConvert.convertToDTO(dencryptUser(existedUser));
+        userRepository.save(existedUser);
+        return userConvert.convertToDTO(dencryptUser(existedUser));
 
 
     }
@@ -135,11 +139,12 @@ public class UserService {
         Page<User> users = userRepository.findAll(pageable);
         return users.map(user -> userConvert.convertToDTO(user));
     }
+
     @Transactional(readOnly = true)
     public Page<UserResponse> getAll1(int pageNum, int pageSize, String sortDir, String sortBy
     ) {
         Pageable pageable = PaginationSortingUtils.getPageable(pageNum, pageSize, sortDir, sortBy);
-        Page<User> users = userRepository.findByIdNot(1L,pageable);
+        Page<User> users = userRepository.findByIdNot(1L, pageable);
         return users.map(user -> userConvert.convertToDTO(dencryptUser(user)));
     }
 
@@ -172,6 +177,7 @@ public class UserService {
             Cart cart = new Cart();
             cart.setUser(user);
             user.setCart(cart);
+            cartRepository.save(cart);
             userRepository.save(user);
             return userConvert.convertToDTO(user);
         }
@@ -181,26 +187,34 @@ public class UserService {
     public UserResponse signUp1(UserRequest request) {
         String email = aesUtil.encrypt(request.getEmail());
         Optional<User> existedUser = userRepository.findByEmail(email);
+
         if (existedUser.isPresent()) {
             throw new AppException(ErrorResponse.USER_EXISTED);
         } else {
-
             Set<String> roles = new HashSet<>();
             roles.add("USER");
             request.setRoles(roles);
+
             User user = userConvert.convertToEntity(request);
             user.setAvatar("https://i.pinimg.com/736x/c6/e5/65/c6e56503cfdd87da299f72dc416023d4.jpg");
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             user.setUsername(user.getUsername() + generateSuffixUsername());
+
+            // Save the User entity first
+            userRepository.save(user);  // Persist the User
+            // Create and associate the Cart with the saved User
             Cart cart = new Cart();
             cart.setUser(user);
+            cartRepository.save(cart);  // Persist the Cart
+            // Now associate the Cart back with the User
             user.setCart(cart);
-
-            User encrypt = encryptUser(user);
-            userRepository.save(encrypt);
-            return userConvert.convertToDTO(encrypt);
+            // Encrypt the User before returning
+            User encryptedUser = encryptUser(user);
+            userRepository.save(encryptedUser);  // Persist the User with the Cart
+            return userConvert.convertToDTO(encryptedUser);
         }
     }
+
 
 
     public String generateSuffixUsername() {
@@ -215,44 +229,43 @@ public class UserService {
     }
 
     public UserResponse saveUser(UserRequest request) {
-            Optional<User> existedUser = userRepository.findByEmail(request.getEmail());
-            if (existedUser.isPresent()) {
-                throw new AppException(ErrorResponse.USER_EXISTED);
-            }
-            else {
-                User user = userConvert.convertToEntity(request);
+        Optional<User> existedUser = userRepository.findByEmail(request.getEmail());
+        if (existedUser.isPresent()) {
+            throw new AppException(ErrorResponse.USER_EXISTED);
+        } else {
+            User user = userConvert.convertToEntity(request);
 
-                user.setUsername(aesUtil.encrypt(user.getUsername()));
-                user.setFullName(aesUtil.encrypt(user.getFullName()));
-                user.setEmail(aesUtil.encrypt(user.getEmail()));
-                user.setAvatar(user.getAvatar() != null ? aesUtil.encrypt(user.getAvatar()) : null);
-                user.setPhone(user.getPhone() != null ? aesUtil.encrypt(user.getPhone()) : null);
+            user.setUsername(aesUtil.encrypt(user.getUsername()));
+            user.setFullName(aesUtil.encrypt(user.getFullName()));
+            user.setEmail(aesUtil.encrypt(user.getEmail()));
+            user.setAvatar(user.getAvatar() != null ? aesUtil.encrypt(user.getAvatar()) : null);
+            user.setPhone(user.getPhone() != null ? aesUtil.encrypt(user.getPhone()) : null);
 
-                 userRepository.save(user);
-                return userConvert.convertToDTO(user);
-            }
+            userRepository.save(user);
+            return userConvert.convertToDTO(user);
+        }
 
     }
 
-    public User encryptUser(User user){
+    public User encryptUser(User user) {
         User encrpyt = new User();
         encrpyt.setId(user.getId());
-        encrpyt.setUsername(aesUtil.encrypt(user.getUsername()));
-        encrpyt.setFullName(aesUtil.encrypt(user.getFullName()));
+        encrpyt.setUsername(user.getAvatar() != null ? aesUtil.encrypt(user.getUsername()) : null);
+        encrpyt.setFullName(user.getFullName() != null ? aesUtil.encrypt(user.getFullName()) : null);
         encrpyt.setEmail(aesUtil.encrypt(user.getEmail()));
         encrpyt.setAvatar(user.getAvatar() != null ? aesUtil.encrypt(user.getAvatar()) : null);
         encrpyt.setPhone(user.getPhone() != null ? aesUtil.encrypt(user.getPhone()) : null);
         encrpyt.setRoles(user.getRoles());
         encrpyt.setPassword(user.getPassword());
-
+        encrpyt.setCart(user.getCart());
         return encrpyt;
     }
 
-    public User dencryptUser(User user){
+    public User dencryptUser(User user) {
         User dencrpyt = new User();
         dencrpyt.setId(user.getId());
-        dencrpyt.setUsername(aesUtil.decrypt(user.getUsername()));
-        dencrpyt.setFullName(aesUtil.decrypt(user.getFullName()));
+        dencrpyt.setUsername(user.getUsername() != null ? aesUtil.decrypt(user.getUsername()) : null);
+        dencrpyt.setFullName(user.getFullName() != null ? aesUtil.decrypt(user.getFullName()) : null);
         dencrpyt.setEmail(aesUtil.decrypt(user.getEmail()));
         dencrpyt.setAvatar(user.getAvatar() != null ? aesUtil.decrypt(user.getAvatar()) : null);
         dencrpyt.setPhone(user.getPhone() != null ? aesUtil.decrypt(user.getPhone()) : null);
@@ -262,20 +275,20 @@ public class UserService {
         return dencrpyt;
     }
 
-    public User encryptUpdateUser(User user){
+    public User encryptUpdateUser(User user) {
         User encrpyt = new User();
         encrpyt.setUsername(aesUtil.encrypt(user.getUsername()));
         encrpyt.setFullName(aesUtil.encrypt(user.getFullName()));
         encrpyt.setEmail(aesUtil.encrypt(user.getEmail()));
         encrpyt.setAvatar(user.getAvatar() != null ? aesUtil.encrypt(user.getAvatar()) : null);
         encrpyt.setPhone(user.getPhone() != null ? aesUtil.encrypt(user.getPhone()) : null);
-       // encrpyt.setRoles(user.getRoles());
+        // encrpyt.setRoles(user.getRoles());
         encrpyt.setPassword(user.getPassword());
 
         return encrpyt;
     }
 
-    public User dencryptUpdateUser(User user){
+    public User dencryptUpdateUser(User user) {
         User dencrpyt = new User();
         dencrpyt.setId(user.getId());
         dencrpyt.setUsername(aesUtil.decrypt(user.getUsername()));
@@ -283,7 +296,7 @@ public class UserService {
         dencrpyt.setEmail(aesUtil.decrypt(user.getEmail()));
         dencrpyt.setAvatar(user.getAvatar() != null ? aesUtil.decrypt(user.getAvatar()) : null);
         dencrpyt.setPhone(user.getPhone() != null ? aesUtil.decrypt(user.getPhone()) : null);
-       // dencrpyt.setRoles(user.getRoles());
+        // dencrpyt.setRoles(user.getRoles());
         dencrpyt.setPassword(user.getPassword());
 
         return dencrpyt;

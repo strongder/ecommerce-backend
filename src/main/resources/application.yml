@@ -3,7 +3,7 @@
     datasource:
       url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/ecommerce
       username: ${MYSQL_USER:root}
-      password: ${MYSQL_PASSWORD:123456789}
+      password: ${MYSQL_PASSWORD:1234567890}
 
     jpa:
       hibernate:

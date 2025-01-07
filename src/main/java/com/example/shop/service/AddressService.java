@@ -106,7 +106,7 @@ public class AddressService {
 				address.setDefaultAddress(false);
 			}
 		});
-		addressRepository.saveAll(addresses.stream().map(this::encryptAddress).collect(Collectors.toList()));
+		addressRepository.saveAll(addresses);
 		return addressConvert.convertToDTO(decryptAddress(addressRepository.findById(id).get()));
 	}
 
@@ -131,6 +131,7 @@ public class AddressService {
 		encrypt.setId(address.getId());
 		encrypt.setDefaultAddress(address.isDefaultAddress());
 		encrypt.setDelete(address.isDelete());
+		encrypt.setUser(address.getUser());
 		return encrypt;
 	}
 
